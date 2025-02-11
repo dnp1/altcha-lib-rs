@@ -10,6 +10,13 @@ pub enum Error {
     SolveChallengeMaxNumberReached(String),
     WrongChallengeInput(String),
     General(String),
+    RandError(rand::distr::uniform::Error),
+}
+
+impl From<rand::distr::uniform::Error> for Error {
+    fn from(value: rand::distr::uniform::Error) -> Self {
+        Error::RandError(value)
+    }
 }
 
 #[cfg(feature = "json")]

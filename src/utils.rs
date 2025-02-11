@@ -1,6 +1,7 @@
 use crate::algorithm::AltchaAlgorithm;
 use hmac::digest::{Digest, KeyInit};
 use hmac::{Hmac, Mac};
+use rand::distr::uniform::Error;
 use rand::Rng;
 use sha1::Sha1;
 use sha2::{Sha256, Sha512};
@@ -13,15 +14,15 @@ pub type ParamsMapType = HashMap<String, String>;
 
 pub fn random_bytes(len: usize) -> Vec<u8> {
     let mut values: Vec<u8> = vec![0; len];
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     rng.fill(values.as_mut_slice());
     values
 }
 
-pub fn random_int(max: u64) -> u64 {
-    let mut rng = rand::thread_rng();
-    let dist = rand::distributions::Uniform::new_inclusive(0, max);
-    rng.sample(dist)
+pub fn random_int(max: u64) -> Result<u64, Error> {
+    let mut rng = rand::rng();
+    let dist = rand::distr::Uniform::new_inclusive(0, max)?;
+    Ok(rng.sample(dist))
 }
 
 pub fn hash_function(altcha_algorithm: &AltchaAlgorithm, data: &str) -> String {
