@@ -1,6 +1,6 @@
 [package]
 name = "altcha-lib-rs"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 authors = ["jmic <jmic@users.noreply.github.com>"]
 description = "Community implementation of the Altcha library in Rust for your own server application to create and validate challenges and responses."
@@ -18,7 +18,7 @@ required-features = ["json"]
 
 [dependencies]
 chrono = "0.4"
-rand = "0"
+rand = "0.9.0"
 sha2 = "0"
 base16ct = { version = "0.2", features = ["alloc"] }
 sha1 = "0"

@@ -103,9 +103,10 @@ pub fn create_challenge(options: ChallengeOptions) -> Result<Challenge, Error> {
             max_number
         )));
     }
-    let number = options
-        .number
-        .unwrap_or_else(|| utils::random_int(max_number));
+    let number = match options.number {
+        Some(n) => n,
+        None => utils::random_int(max_number)?,
+    };
 
     let (mut salt, mut salt_params) = utils::extract_salt_params(salt.as_str());
 
@@ -301,6 +302,8 @@ pub fn solve_challenge(
     )))
 }
 
+const EXPIRES_PRAM: &str = "expires";
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -371,5 +374,3 @@ mod tests {
         assert!(challenge.is_err());
     }
 }
-
-const EXPIRES_PRAM: &str = "expires";
