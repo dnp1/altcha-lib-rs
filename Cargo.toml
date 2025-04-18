@@ -1,6 +1,6 @@
 [package]
 name = "altcha-lib-rs"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2021"
 authors = ["jmic <jmic@users.noreply.github.com>"]
 description = "Community implementation of the Altcha library in Rust for your own server application to create and validate challenges and responses."
@@ -25,6 +25,7 @@ sha1 = "0"
 hmac = "0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0", optional = true }
+thiserror = "2.0.12"
 
 [features]
 default = []
