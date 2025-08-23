@@ -20,13 +20,13 @@ jobs:
         with:
           toolchain: stable
       - run: cargo build --all-features
-      - run: cargo test
+      - run: cargo test --all-features
       - run: cargo login ${{ secrets.CRATES_IO_TOKEN }}
       - run: cargo publish --all-features
       - name: Create Release
         id: create_release
-        uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        if: github.ref_type == 'tag'
         with:
           draft: false
           prerelease: false
