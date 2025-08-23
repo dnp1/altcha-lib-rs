@@ -11,6 +11,7 @@ For more information about ALTCHA <https://altcha.org/docs>
 - Compatible with the ALTCHA client-side widget
 - Generates and validates self-hosted challenges
 - Expiring challenges option
+- Supports the algorithms SHA256, SHA384, SHA512, and SHA1 (via optional feature flag)
 
 **Not part of this library:** 
 - Methods to call ALTCHA's spam filter API
@@ -21,7 +22,7 @@ For more information about ALTCHA <https://altcha.org/docs>
 
 ```toml
 [dependencies]
-altcha-lib-rs = { version = "0", features = ["json"] }
+altcha-lib-rs = { version = "0", features = ["json"] } # with SHA1: ["json", "sha1"]
 ```
 
 ## Example
