@@ -23,6 +23,7 @@ jobs:
           - nightly
         features:
           - json
+          - sha1
           - default
         os:
           - ubuntu-latest
