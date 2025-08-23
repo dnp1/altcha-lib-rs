@@ -345,7 +345,7 @@ mod tests {
     }
 
     #[test]
-    #[cfg(feature = "json")]
+    #[cfg(all(feature = "json", feature = "sha1"))]
     fn test_create_json_challenge() {
         let challenge_json = create_json_challenge(ChallengeOptions {
             algorithm: Some(AltchaAlgorithm::Sha1),

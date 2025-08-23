@@ -3,12 +3,15 @@ use hmac::digest::{Digest, KeyInit};
 use hmac::{Hmac, Mac};
 use rand::distr::uniform::Error;
 use rand::Rng;
+#[cfg(feature = "sha1")]
 use sha1::Sha1;
-use sha2::{Sha256, Sha512};
+use sha2::{Sha256, Sha384, Sha512};
 use std::collections::HashMap;
 
+#[cfg(feature = "sha1")]
 type HmacSha1 = Hmac<Sha1>;
 type HmacSha256 = Hmac<Sha256>;
+type HmacSha384 = Hmac<Sha384>;
 type HmacSha512 = Hmac<Sha512>;
 pub type ParamsMapType = HashMap<String, String>;
 
@@ -27,8 +30,10 @@ pub fn random_int(max: u64) -> Result<u64, Error> {
 
 pub fn hash_function(altcha_algorithm: &AltchaAlgorithm, data: &str) -> String {
     match altcha_algorithm {
+        #[cfg(feature = "sha1")]
         AltchaAlgorithm::Sha1 => hash_str_to_hex::<Sha1>(data),
         AltchaAlgorithm::Sha256 => hash_str_to_hex::<Sha256>(data),
+        AltchaAlgorithm::Sha384 => hash_str_to_hex::<Sha384>(data),
         AltchaAlgorithm::Sha512 => hash_str_to_hex::<Sha512>(data),
     }
 }
@@ -40,8 +45,10 @@ fn hash_str_to_hex<Hash: Digest>(data: &str) -> String {
 
 pub fn hmac_function(altcha_algorithm: &AltchaAlgorithm, data: &str, key: &str) -> String {
     match altcha_algorithm {
+        #[cfg(feature = "sha1")]
         AltchaAlgorithm::Sha1 => hmac_from_slice_to_hex_str::<HmacSha1>(data, key),
         AltchaAlgorithm::Sha256 => hmac_from_slice_to_hex_str::<HmacSha256>(data, key),
+        AltchaAlgorithm::Sha384 => hmac_from_slice_to_hex_str::<HmacSha384>(data, key),
         AltchaAlgorithm::Sha512 => hmac_from_slice_to_hex_str::<HmacSha512>(data, key),
     }
 }
