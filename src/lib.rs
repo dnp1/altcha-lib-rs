@@ -112,7 +112,7 @@ pub fn create_challenge(options: ChallengeOptions) -> Result<Challenge, Error> {
 
     if let Some(expire_value) = options.expires {
         salt_params.insert(
-            String::from(EXPIRES_PRAM),
+            String::from(EXPIRES_PARAM),
             expire_value.timestamp().to_string(),
         );
     }
@@ -208,7 +208,7 @@ pub fn verify_solution(payload: &Payload, hmac_key: &str, check_expire: bool) ->
     let (_, salt_params) = utils::extract_salt_params(&payload.salt);
 
     if check_expire {
-        if let Some(expire_str) = salt_params.get(&String::from(EXPIRES_PRAM)) {
+        if let Some(expire_str) = salt_params.get(&String::from(EXPIRES_PARAM)) {
             let expire_timestamp: i64 = expire_str.parse()?;
             let Some(expire) = DateTime::from_timestamp(expire_timestamp, 0) else {
                 return Err(Error::ParseExpire(format!(
@@ -302,7 +302,7 @@ pub fn solve_challenge(
     )))
 }
 
-const EXPIRES_PRAM: &str = "expires";
+const EXPIRES_PARAM: &str = "expires";
 
 #[cfg(test)]
 mod tests {
@@ -346,7 +346,7 @@ mod tests {
 
     #[test]
     #[cfg(all(feature = "json", feature = "sha1"))]
-    fn test_create_json_challenge() {
+    fn test_create_json_challenge_sha1() {
         let challenge_json = create_json_challenge(ChallengeOptions {
             algorithm: Some(AltchaAlgorithm::Sha1),
             max_number: Some(100000),
@@ -359,7 +359,26 @@ mod tests {
         .expect("should be ok");
         assert_eq!(
             challenge_json,
-            r#"{"algorithm":"SHA-1","challenge":"864412db92050e02c89e7e623c773491e8495990","maxnumber":100000,"salt":"blabla?expires=1715526540","signature":"2e66edb70874996e94430c62ac6e2815a092718d"}"#
+            r#"{"algorithm":"SHA-1","challenge":"b8cb6ab65eff40acc59c4b1dc7a3290c4d5fcc64","maxnumber":100000,"salt":"blabla?expires=1715526540&","signature":"41ffdad2c1649e1056cb3a5dd1e1e5252ba481ef"}"#
+        );
+    }
+
+    #[test]
+    #[cfg(all(feature = "json"))]
+    fn test_create_json_challenge_sha512() {
+        let challenge_json = create_json_challenge(ChallengeOptions {
+            algorithm: Some(AltchaAlgorithm::Sha512),
+            max_number: Some(100000),
+            number: Some(33333),
+            salt: Some(String::from("blubb")),
+            hmac_key: "some_key",
+            expires: Some(DateTime::from_timestamp(1715526541, 0).unwrap()),
+            ..Default::default()
+        })
+            .expect("should be ok");
+        assert_eq!(
+            challenge_json,
+            r#"{"algorithm":"SHA-512","challenge":"30af91a2099af3b64f91f271aeec65c144f8fe9efe0f42d4207a984350ecda2f72ef8fb7f55bc7125f173b0de9160f95c17c65e23dd1da30626f0aed50f4bf88","maxnumber":100000,"salt":"blubb?expires=1715526541&","signature":"12cc3c3c04622fee8d2ea729b5b825dc25344969c07957384f825f7576778df4f6a8fa76ef8d0ec47ca15206c574293613b2dd46f22b24009a974805c91062de"}"#
         );
     }
 

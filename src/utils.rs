@@ -67,11 +67,14 @@ pub fn extract_salt_params(salt: &str) -> (String, ParamsMapType) {
         return (salt.to_string(), salt_params);
     }
     let (salt, salt_query) = salt.split_once("?").unwrap();
-    for parts in salt_query.split("&") {
+    for parts in salt_query.split_inclusive("&") {
         let Some((key, value)) = parts.split_once("=") else {
             continue;
         };
-        salt_params.insert(key.to_string(), value.to_string());
+        if !value.ends_with("&") {
+            break;
+        }
+        salt_params.insert(key.to_string(), value[..value.len() - 1].to_string());
     }
     (salt.to_string(), salt_params)
 }
@@ -81,16 +84,17 @@ pub fn generate_url_from_salt_params(params: &ParamsMapType) -> String {
         .iter()
         .map(|(key, value)| key.to_owned() + "=" + value)
         .reduce(|acc, e| acc + "&" + e.as_str())
-        .unwrap()
+        .unwrap() + "&"
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::EXPIRES_PARAM;
 
     #[test]
     fn test_extract_salt_params() {
-        let (salt, map) = extract_salt_params("mjsSEFiofesw432==?bla=test&jo=foo");
+        let (salt, map) = extract_salt_params("mjsSEFiofesw432==?bla=test&jo=foo&");
         let mut expectation = ParamsMapType::new();
         expectation.insert("bla".to_string(), "test".to_string());
         expectation.insert("jo".to_string(), "foo".to_string());
@@ -99,12 +103,42 @@ mod tests {
     }
 
     #[test]
+    fn test_extract_salt_params_correct_expires_at_end() {
+        let (salt, map) = extract_salt_params("mjsSEFiofesw432==?bla=test&expires=foo&");
+        let mut expectation = ParamsMapType::new();
+        expectation.insert("bla".to_string(), "test".to_string());
+        expectation.insert(EXPIRES_PARAM.to_string(), "foo".to_string());
+        assert_eq!(map, expectation);
+        assert_eq!(salt, "mjsSEFiofesw432==");
+    }
+
+    #[test]
+    fn test_extract_salt_params_correct_expires_at_start() {
+        let (salt, map) = extract_salt_params("mjsSEFiofesw432==?expires=foo&bla=test&");
+        let mut expectation = ParamsMapType::new();
+        expectation.insert("bla".to_string(), "test".to_string());
+        expectation.insert(EXPIRES_PARAM.to_string(), "foo".to_string());
+        assert_eq!(map, expectation);
+        assert_eq!(salt, "mjsSEFiofesw432==");
+    }
+
+    #[test]
+    fn test_extract_salt_params_vulnerable_without_delimiter() {
+        let (salt, map) = extract_salt_params("mjsSEFiofesw432==?bla=test&expires=foo");
+        let mut expectation = ParamsMapType::new();
+        expectation.insert("bla".to_string(), "test".to_string());
+        expectation.insert(EXPIRES_PARAM.to_string(), "foo".to_string());
+        assert_ne!(map, expectation);
+        assert_eq!(salt, "mjsSEFiofesw432==");
+    }
+
+    #[test]
     fn test_generate_url_from_salt_params() {
-        let expectation_a = "bla=test&jo=foo".to_string();
-        let expectation_b = "jo=foo&bla=test".to_string();
+        let expectation_a = "bla=test&expires=foo&".to_string();
+        let expectation_b = "expires=foo&bla=test&".to_string();
         let mut input = ParamsMapType::new();
         input.insert("bla".to_string(), "test".to_string());
-        input.insert("jo".to_string(), "foo".to_string());
+        input.insert(EXPIRES_PARAM.to_string(), "foo".to_string());
         let res = generate_url_from_salt_params(&input);
         assert!(res == expectation_a || res == expectation_b);
     }
