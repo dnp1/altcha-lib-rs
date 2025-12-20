@@ -12,6 +12,7 @@ For more information about ALTCHA <https://altcha.org/docs>
 - Generates and validates self-hosted challenges
 - Expiring challenges option
 - Supports the algorithms SHA256, SHA384, SHA512, and SHA1 (via optional feature flag)
+- With v0.3, enforces delimited salt to prevent replay attacks; see https://altcha.org/security-advisory/
 
 **Not part of this library:** 
 - Methods to call ALTCHA's spam filter API
