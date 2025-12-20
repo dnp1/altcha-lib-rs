@@ -375,7 +375,7 @@ mod tests {
             expires: Some(DateTime::from_timestamp(1715526541, 0).unwrap()),
             ..Default::default()
         })
-            .expect("should be ok");
+        .expect("should be ok");
         assert_eq!(
             challenge_json,
             r#"{"algorithm":"SHA-512","challenge":"30af91a2099af3b64f91f271aeec65c144f8fe9efe0f42d4207a984350ecda2f72ef8fb7f55bc7125f173b0de9160f95c17c65e23dd1da30626f0aed50f4bf88","maxnumber":100000,"salt":"blubb?expires=1715526541&","signature":"12cc3c3c04622fee8d2ea729b5b825dc25344969c07957384f825f7576778df4f6a8fa76ef8d0ec47ca15206c574293613b2dd46f22b24009a974805c91062de"}"#
