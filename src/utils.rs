@@ -84,7 +84,8 @@ pub fn generate_url_from_salt_params(params: &ParamsMapType) -> String {
         .iter()
         .map(|(key, value)| key.to_owned() + "=" + value)
         .reduce(|acc, e| acc + "&" + e.as_str())
-        .unwrap() + "&"
+        .unwrap()
+        + "&"
 }
 
 #[cfg(test)]
