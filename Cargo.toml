@@ -20,7 +20,7 @@ required-features = ["json", "sha1"]
 chrono = "0.4"
 rand = "0.9"
 sha2 = "0"
-base16ct = { version = "0.3", features = ["alloc"] }
+base16ct = { version = "1.0", features = ["alloc"] }
 sha1 = { version = "0", optional = true }
 hmac = "0"
 serde = { version = "1.0", features = ["derive"] }
