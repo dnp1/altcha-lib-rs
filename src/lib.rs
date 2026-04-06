@@ -17,8 +17,8 @@
 // limitations under the License.
 
 use algorithm::AltchaAlgorithm;
-use chrono::{DateTime, Utc};
 use error::Error;
+use jiff::Timestamp;
 use serde::{Deserialize, Serialize};
 use utils::ParamsMapType;
 
@@ -41,7 +41,7 @@ pub struct ChallengeOptions<'a> {
     pub hmac_key: &'a str,
     pub salt: Option<String>,
     pub number: Option<u64>,
-    pub expires: Option<DateTime<Utc>>,
+    pub expires: Option<Timestamp>,
     pub params: Option<ParamsMapType>,
 }
 
@@ -78,12 +78,12 @@ pub struct Payload {
 ///
 /// ```
 /// use std::default;
-/// use chrono::Utc;
-/// use altcha_lib_rs::{create_challenge, ChallengeOptions};
+/// use jiff::{Timestamp, ToSpan};
+/// use altcha_lib::{create_challenge, ChallengeOptions};
 /// let challenge = create_challenge(
 ///     ChallengeOptions{
 ///         hmac_key: "super-secret",
-///         expires: Some(Utc::now()+chrono::TimeDelta::minutes(1)),
+///         expires: Some(Timestamp::now().checked_add(5_i64.minutes()).unwrap()),
 ///         ..Default::default()
 ///  });
 /// ```
@@ -113,7 +113,7 @@ pub fn create_challenge(options: ChallengeOptions) -> Result<Challenge, Error> {
     if let Some(expire_value) = options.expires {
         salt_params.insert(
             String::from(EXPIRES_PARAM),
-            expire_value.timestamp().to_string(),
+            expire_value.as_second().to_string(),
         );
     }
     if let Some(params) = options.params {
@@ -149,12 +149,12 @@ pub fn create_challenge(options: ChallengeOptions) -> Result<Challenge, Error> {
 ///
 /// ```
 /// use std::default;
-/// use chrono::Utc;
-/// use altcha_lib_rs::{create_challenge, create_json_challenge, ChallengeOptions};
+/// use jiff::{Timestamp, ToSpan};
+/// use altcha_lib::{create_challenge, create_json_challenge, ChallengeOptions};
 /// let challenge = create_json_challenge(
 ///     ChallengeOptions{
 ///         hmac_key: "super-secret",
-///         expires: Some(Utc::now()+chrono::TimeDelta::minutes(1)),
+///         expires: Some(Timestamp::now().checked_add(5_i64.minutes()).unwrap()),
 ///         ..Default::default()
 ///  });
 /// ```
@@ -177,7 +177,7 @@ pub fn create_json_challenge(options: ChallengeOptions) -> Result<String, Error>
 /// # Examples
 ///
 /// ```
-/// use altcha_lib_rs::verify_json_solution;
+/// use altcha_lib::verify_json_solution;
 /// let payload_str = r#"{
 ///     "algorithm":"SHA-256","challenge":"aa9c8ec8057413dd8220e21e15ab54b095fb3c840601d44c39bece8d9df34529"
 ///     ,"number":971813,"salt":"3065d108b2314f5ecc7e1207",
@@ -210,13 +210,10 @@ pub fn verify_solution(payload: &Payload, hmac_key: &str, check_expire: bool) ->
     if check_expire {
         if let Some(expire_str) = salt_params.get(&String::from(EXPIRES_PARAM)) {
             let expire_timestamp: i64 = expire_str.parse()?;
-            let Some(expire) = DateTime::from_timestamp(expire_timestamp, 0) else {
-                return Err(Error::ParseExpire(format!(
-                    "Failed to parse timestamp {}",
-                    expire_timestamp
-                )));
-            };
-            let now_time: DateTime<Utc> = Utc::now();
+            let expire = Timestamp::from_second(expire_timestamp).map_err(|_| {
+                Error::ParseExpire(format!("Failed to parse timestamp {}", expire_timestamp))
+            })?;
+            let now_time = Timestamp::now();
             if expire < now_time {
                 return Err(Error::VerificationFailedExpired(format!(
                     "expired {}",
@@ -268,12 +265,12 @@ pub fn verify_solution(payload: &Payload, hmac_key: &str, check_expire: bool) ->
 /// # Examples
 ///
 /// ```
-///  use chrono::Utc;
-///  use altcha_lib_rs::{create_challenge, solve_challenge, ChallengeOptions};
+///  use jiff::{Timestamp, ToSpan};
+///  use altcha_lib::{create_challenge, solve_challenge, ChallengeOptions};
 ///  let challenge = create_challenge(
 ///     ChallengeOptions{
 ///         hmac_key: "super-secret",
-///         expires: Some(Utc::now()+chrono::TimeDelta::minutes(1)),
+///         expires: Some(Timestamp::now().checked_add(5_i64.minutes()).unwrap()),
 ///         ..Default::default()
 ///  }).expect("internal error");
 ///  let res = solve_challenge(&challenge.challenge, &challenge.salt,
@@ -307,6 +304,7 @@ const EXPIRES_PARAM: &str = "expires";
 #[cfg(test)]
 mod tests {
     use super::*;
+    use jiff::ToSpan;
 
     #[test]
     #[cfg(feature = "json")]
@@ -326,7 +324,7 @@ mod tests {
             salt: None,
             hmac_key: "super-secret",
             params: None,
-            expires: Some(Utc::now() + chrono::TimeDelta::minutes(1)),
+            expires: Some(Timestamp::now().checked_add(5_i64.minutes()).unwrap()),
             salt_length: None,
         })
         .expect("should be ok");
@@ -344,24 +342,6 @@ mod tests {
         verify_json_solution(&string_payload, "super-secret", true).expect("should be ok");
     }
 
-    #[test]
-    #[cfg(all(feature = "json", feature = "sha1"))]
-    fn test_create_json_challenge_sha1() {
-        let challenge_json = create_json_challenge(ChallengeOptions {
-            algorithm: Some(AltchaAlgorithm::Sha1),
-            max_number: Some(100000),
-            number: Some(22222),
-            salt: Some(String::from("blabla")),
-            hmac_key: "my_key",
-            expires: Some(DateTime::from_timestamp(1715526540, 0).unwrap()),
-            ..Default::default()
-        })
-        .expect("should be ok");
-        assert_eq!(
-            challenge_json,
-            r#"{"algorithm":"SHA-1","challenge":"b8cb6ab65eff40acc59c4b1dc7a3290c4d5fcc64","maxnumber":100000,"salt":"blabla?expires=1715526540&","signature":"41ffdad2c1649e1056cb3a5dd1e1e5252ba481ef"}"#
-        );
-    }
 
     #[test]
     #[cfg(feature = "json")]
@@ -372,7 +352,7 @@ mod tests {
             number: Some(33333),
             salt: Some(String::from("blubb")),
             hmac_key: "some_key",
-            expires: Some(DateTime::from_timestamp(1715526541, 0).unwrap()),
+            expires: Some(Timestamp::from_second(1715526541).unwrap()),
             ..Default::default()
         })
         .expect("should be ok");

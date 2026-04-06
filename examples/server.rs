@@ -1,8 +1,8 @@
 use actix_web::{body, get, http, post, web, App, HttpResponse, HttpServer, ResponseError};
-use altcha_lib_rs::{error, Challenge, ChallengeOptions};
+use altcha_lib::{error, Challenge, ChallengeOptions};
 use base64::prelude::BASE64_STANDARD;
 use base64::Engine;
-use chrono::Utc;
+use jiff::{Timestamp, ToSpan};
 use serde::{Deserialize, Serialize, Serializer};
 use std::fmt::{Display, Formatter};
 
@@ -95,9 +95,9 @@ impl From<std::str::Utf8Error> for ErrorResponse {
 
 #[get("/altcha")]
 async fn get_challenge() -> actix_web::Result<web::Json<Challenge>, ErrorResponse> {
-    let res = altcha_lib_rs::create_challenge(ChallengeOptions {
+    let res = altcha_lib::create_challenge(ChallengeOptions {
         hmac_key: SECRET_KEY,
-        expires: Some(Utc::now() + chrono::TimeDelta::minutes(5)),
+        expires: Some(Timestamp::now().checked_add(5_i64.minutes()).unwrap()),
         ..Default::default()
     })?;
     Ok(web::Json(res))
@@ -109,7 +109,7 @@ async fn verify(
 ) -> actix_web::Result<web::Json<VerifiedResponse>, ErrorResponse> {
     let decoded_payload = BASE64_STANDARD.decode(&req.altcha)?;
     let string_payload = std::str::from_utf8(decoded_payload.as_slice())?;
-    altcha_lib_rs::verify_json_solution(string_payload, SECRET_KEY, true)?;
+    altcha_lib::verify_json_solution(string_payload, SECRET_KEY, true)?;
     Ok(web::Json(VerifiedResponse { verified: true }))
 }
 

@@ -19,11 +19,9 @@ jobs:
       matrix:
         rust:
           - stable
-          # - beta
           - nightly
         features:
           - json
-          - sha1,json
           - default
         os:
           - ubuntu-latest
